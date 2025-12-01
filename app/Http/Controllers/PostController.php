@@ -3,36 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Post;
 use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
-    //
-    // Data dummy untuk contoh
-    private function getPosts()
-    {
-        return [
-            [
-                'id' => 1,
-                'title' => 'Belajar Laravel',
-                'content' => 'Laravel adalah framework PHP yang populer.',
-                'author' => 'Admin',
-                'created_at' => '2024-01-15'
-            ],
-            [
-                'id' => 2,
-                'title' => 'Mengenal Blade Template',
-                'content' => 'Blade adalah template engine bawaan Laravel.',
-                'author' => 'Admin',
-                'created_at' => '2024-01-16'
-            ]
-        ];
-    }
-
-    // Menampilkan semua post
+    /**
+     * Menampilkan semua post.
+     */
     public function index()
     {
-        $posts = $this->getPosts();
+        $posts = Post::latest()->paginate(10);
+
         return view('posts.index', compact('posts'));
     }
 
@@ -45,24 +27,52 @@ class PostController extends Controller
     // Menyimpan post baru (contoh validasi)
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|max:255',
             'content' => 'required',
             'author' => 'required|max:100'
         ]);
 
-        // Di sini nanti akan menyimpan ke database
+        Post::create($validated);
+
         return redirect()->route('posts.index')
             ->with('success', 'Post berhasil dibuat!');
     }
 
     // Menampilkan detail post
-    public function show($id)
+    public function show(Post $post)
     {
-        $posts = $this->getPosts();
-        $post = collect($posts)->firstWhere('id', $id);
-
         return view('posts.show', compact('post'));
+    }
+
+    // Menampilkan form edit
+    public function edit(Post $post)
+    {
+        return view('posts.edit', compact('post'));
+    }
+
+    // Memperbarui post
+    public function update(Request $request, Post $post)
+    {
+        $validated = $request->validate([
+            'title' => 'required|max:255',
+            'content' => 'required',
+            'author' => 'required|max:100'
+        ]);
+
+        $post->update($validated);
+
+        return redirect()->route('posts.show', $post)
+            ->with('success', 'Post berhasil diperbarui!');
+    }
+
+    // Menghapus post
+    public function destroy(Post $post)
+    {
+        $post->delete();
+
+        return redirect()->route('posts.index')
+            ->with('success', 'Post berhasil dihapus!');
     }
 
 }
